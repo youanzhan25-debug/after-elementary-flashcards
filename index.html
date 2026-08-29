@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>小学后词汇单词闪卡</title>
+<style>
+:root{
+  --bg1:#0f1b2d; --bg2:#1b2f4e;
+  --card:#fdf6ec; --card-edge:#e8dcc8;
+  --ink:#24344d; --sub:#6b7a92;
+  --acc:#ff7a3d; --acc-deep:#e85d1f;
+  --gold:#d9a441;
+  --ok:#2ecc71;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{max-width:100%;overflow-x:hidden;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  background:radial-gradient(120% 90% at 15% 0%,var(--bg2) 0%,var(--bg1) 55%,#0a1522 100%);
+  min-height:100vh;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;
+  padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px);
+}
+.wrap{width:100%;max-width:520px;display:flex;flex-direction:column;flex:1;}
+
+/* ---------- 头部 ---------- */
+header{text-align:center;padding:14px 0 10px;}
+header h1{
+  font-size:19px;font-weight:800;letter-spacing:1px;color:#fff;
+  text-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+header h1 .dot{color:var(--acc);}
+header p{font-size:12px;color:#9fb2cc;margin-top:4px;}
+
+/* ---------- 工具条 ---------- */
+.toolbar{display:flex;gap:8px;align-items:center;margin:10px 0 8px;flex-wrap:nowrap;}
+.btn{
+  border:none;border-radius:12px;padding:9px 12px;font-size:13px;font-weight:600;
+  background:rgba(255,255,255,.08);color:#dfe9f5;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+  transition:transform .12s,background .15s;
+}
+.btn:active{transform:scale(.94);}
+.btn.on{background:var(--acc);color:#fff;}
+.spacer{flex:1;}
+.icon-btn{width:38px;height:38px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:17px;}
+
+/* 分类 chips 横向滚动 */
+.chips{
+  display:flex;gap:8px;overflow-x:auto;padding:6px 2px 8px;margin:0 -2px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.chips::-webkit-scrollbar{display:none;}
+.chip{
+  flex:0 0 auto;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);
+  color:#c8d6e8;border-radius:999px;padding:7px 13px;font-size:12.5px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700;}
+
+/* ---------- 卡片 ---------- */
+.stage{display:flex;justify-content:center;perspective:1400px;margin:8px 0 4px;}
+.card-scene{position:relative;width:100%;max-width:460px;height:min(52vh,430px);min-height:300px;transform-style:preserve-3d;}
+.card{
+  position:absolute;inset:0;border-radius:26px;cursor:pointer;
+  transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,.1,.2,1);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  box-shadow:0 18px 45px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.06) inset;
+}
+.card.flip{transform:rotateY(180deg);}
+.face{
+  position:absolute;inset:0;border-radius:26px;padding:22px;
+  display:flex;flex-direction:column;
+  background:linear-gradient(165deg,#fffdf7 0%,var(--card) 55%,#f3e8d2 100%);
+  border:1px solid var(--card-edge);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.face.back{transform:rotateY(180deg);background:linear-gradient(165deg,#fffaf0 0%,#fdf0da 60%,#f7e3c4 100%);}
+
+.face .tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.tag{
+  font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;
+  background:rgba(26,74,135,.09);color:#3a5a86;letter-spacing:.3px;
+}
+.tag.acc{background:rgba(255,122,61,.14);color:var(--acc-deep);}
+
+.face .main{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;overflow:hidden;}
+.card-img{
+  flex:none;width:min(62%,240px);aspect-ratio:1/1;margin:2px auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:18px;background:linear-gradient(160deg,#fff 0%,#f1e7d3 100%);
+  border:1px solid rgba(217,164,65,.35);overflow:hidden;
+}
+.card-emoji{font-size:clamp(70px,18vw,110px);line-height:1;user-select:none;}
+.card-img img.hide,.card-emoji.hide{display:none;}
+.card-img img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transform:scale(1.3);
+  transform-origin:center;
+}
+.card-img.hide{display:none;}
+.watermark{
+  text-align:center;font-size:8.5px;line-height:1.5;letter-spacing:.5px;
+  color:rgba(90,70,35,.20);margin:2px 0 6px;user-select:none;
+}
+.watermark.hide{display:none;}
+.face .l3en,.face .l3zh{font-weight:800;word-break:break-word;line-height:1.3;}
+.face .l3en{font-size:clamp(24px,6vw,34px);color:var(--ink);}
+.face .l3zh{font-size:clamp(30px,7.5vw,44px);color:var(--ink);}
+.face .hint{font-size:12px;color:var(--sub);margin-top:12px;}
+
+.path{
+  margin-top:auto;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.65);
+  border:1px dashed rgba(217,164,65,.55);text-align:center;
+}
+.path .pl{font-size:12px;color:var(--sub);margin-bottom:4px;letter-spacing:1px;}
+.path .pv{font-size:15px;font-weight:700;color:#5a4a20;line-height:1.5;word-break:break-word;}
+.path .pv .arrow{color:var(--gold);margin:0 5px;font-weight:900;}
+
+.face:not(.back) .path{display:none;}
+.speaker{
+  position:absolute;bottom:14px;right:14px;z-index:5;
+  width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--acc);color:#fff;font-size:19px;
+  box-shadow:0 6px 16px rgba(232,93,31,.45);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s;
+}
+.speaker:active{transform:scale(.9);}
+.speaker.speaking{animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,122,61,.55);}50%{box-shadow:0 0 0 14px rgba(255,122,61,0);}}
+
+.corner{
+  position:absolute;top:14px;left:16px;font-size:11.5px;font-weight:700;color:var(--sub);letter-spacing:.5px;
+}
+
+/* ---------- 进度 ---------- */
+.progress{margin:14px 0 4px;}
+.progress .pbar{height:6px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;}
+.progress .pfill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--gold));transition:width .25s;width:0;}
+.progress .ptext{display:flex;justify-content:space-between;font-size:11.5px;color:#9fb2cc;margin-top:6px;}
+
+/* ---------- 底部操作 ---------- */
+.controls{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.ctrl-btn{
+  flex:1;border:none;border-radius:16px;padding:14px 0;font-size:15px;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.1);color:#eaf1fa;transition:transform .12s,background .15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.ctrl-btn:active{transform:scale(.95);}
+.ctrl-btn.primary{background:linear-gradient(135deg,var(--acc) 0%,var(--acc-deep) 100%);box-shadow:0 8px 20px rgba(232,93,31,.35);}
+.ctrl-btn.small{flex:0 0 auto;width:52px;border-radius:16px;}
+#langBtn{font-size:12px;font-weight:800;letter-spacing:.5px;}
+
+/* ---------- 提示条 ---------- */
+.toast{
+  position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
+  background:rgba(20,32,52,.95);color:#fff;padding:10px 18px;border-radius:12px;
+  font-size:13px;opacity:0;pointer-events:none;transition:all .3s;z-index:99;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:86%;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+footer{text-align:center;font-size:11px;color:#5f7290;margin-top:14px;letter-spacing:.5px;}
+.tts-banner{
+  display:flex;align-items:flex-start;gap:8px;margin:8px 0 4px;padding:10px 12px;
+  background:linear-gradient(135deg,#fff7e6 0%,#ffefd2 100%);
+  border:1px solid rgba(217,164,65,.5);border-radius:12px;
+  font-size:12.5px;line-height:1.6;color:#6b5310;
+}
+.tts-banner.hide{display:none;}
+.tts-banner b{color:#a05a00;}
+.tts-banner .x{margin-left:auto;flex:none;background:none;border:none;font-size:14px;color:#a08a55;cursor:pointer;padding:0 2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>小学后词汇<span class="dot">单词闪卡</span></h1>
+    <p id="statLine">小学后词汇 · 222 个单词 · 点击朗读</p>
+  </header>
+
+  <div class="tts-banner hide" id="ttsBanner">
+    <div>📢 当前浏览器<span style="color:#c0392b">不支持朗读</span>。<br>请在页面右上角点 <b>「···」→「在浏览器中打开」</b>，或用 <b>Safari / Chrome</b> 打开本链接，即可获得英式发音朗读；<b>添加到主屏幕</b>后从图标进入效果最佳。<br>（微信内置浏览器会屏蔽朗读功能）</div>
+    <button class="x" id="ttsClose">✕</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn" id="modeBtn" title="切换卡片朝向">EN → 中</button>
+    <button class="btn" id="orderBtn" title="切换顺序/随机">顺序</button>
+    <div class="spacer"></div>
+    <button class="btn icon-btn" id="autoBtn" title="自动播放">▶</button>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="stage">
+    <div class="card-scene" id="scene">
+      <div class="card" id="card">
+        <div class="face">
+          <span class="corner" id="cornerFront"></span>
+          <div class="tag-row" id="tagsFront"></div>
+          <div class="main">
+            <div class="card-img hide" id="frontImgWrap"><img id="frontImg" alt="" referrerpolicy="no-referrer"><div class="card-emoji hide" id="frontEmoji"></div></div>
+            <div class="l3en" id="frontText"></div><div class="hint" id="frontHint">点击卡片翻面看中文 · 点 🔊 英音朗读</div>
+          </div>
+          <div class="path"><div class="pl" id="frontPathLabel">所属路径</div><div class="pv" id="frontPath"></div></div>
+        </div>
+        <div class="face back">
+          <span class="corner">答案</span>
+          <div class="tag-row" id="tagsBack"></div>
+          <div class="main"><div class="l3zh" id="backText"></div><div class="hint">点击卡片返回 · 点 🔊 朗读</div></div>
+          <div class="path"><div class="pl">所属路径</div><div class="pv" id="backPath"></div></div>
+        </div>
+        <button class="speaker" id="speakBtn" aria-label="朗读">🔊</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="watermark hide" id="watermark"><div>微信/电话：13513443496</div><div>做出口找小詹 · 让外贸更简单</div></div>
+
+  <div class="progress">
+    <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    <div class="ptext"><span id="pcur">0 / 0</span><span id="pinfo"></span></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn small" id="prevBtn">◀</button>
+    <button class="ctrl-btn primary" id="nextBtn">下一张 ▶</button>
+    <button class="ctrl-btn small" id="langBtn" title="中英文图片转换">中⇄EN</button>
+  </div>
+
+  <footer>数据：小学后词汇表（含释义）· 点 🔊 逐词跟读 · 点击卡片翻面 · 右下角按钮中英文图片转换</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+window.CATALOG=[{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"ability","l3zh":"n.能力；才能","img":"emoji:💪"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"accepted","l3zh":"adj.公认的；被接受的","img":"emoji:✅"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"adults","l3zh":"n.成年人（复数）","img":"emoji:🧑"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"against","l3zh":"prep.反对；靠着；对抗","img":"emoji:⚔️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"algorithm","l3zh":"n.算法；运算法则","img":"emoji:🧮"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"alone","l3zh":"adv.独自；单独","img":"emoji:🧍"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"always","l3zh":"adv.总是；一直","img":"emoji:🔁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"ambitious","l3zh":"adj.有雄心的；野心勃勃的","img":"emoji:🌟"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"american","l3zh":"adj.美国的 n.美国人","img":"emoji:🇺🇸"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"americans","l3zh":"n.美国人（复数）","img":"emoji:🇺🇸"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"anyway","l3zh":"adv.不管怎样；无论如何","img":"emoji:🤷"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"apart","l3zh":"adv.分开；相隔","img":"emoji:↔️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"app","l3zh":"n.应用程序（APP）","img":"emoji:📱"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"apply","l3zh":"v.申请；应用；适用","img":"emoji:📝"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"approach","l3zh":"n.方法；途径 v.接近；处理","img":"emoji:🧭"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"as","l3zh":"prep.作为 conj.当……时；因为","img":"emoji:🔗"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"aspire","l3zh":"v.渴望；追求；立志","img":"emoji:🌟"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"assignment","l3zh":"n.作业；任务；分配","img":"emoji:📋"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"avoid","l3zh":"v.避免；避开","img":"emoji:🚫"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"bars","l3zh":"n.酒吧；条；栅栏（复数）","img":"emoji:🍺"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"became","l3zh":"v.成为（become 的过去式）","img":"emoji:🔄"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"become","l3zh":"v.变成；成为","img":"emoji:🦋"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"benign","l3zh":"adj.良性的；和善的","img":"emoji:🌿"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"beyonce","l3zh":"n.碧昂丝（美国歌手，专名）","img":"emoji:🎤"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"blank","l3zh":"adj.空白的；茫然的 n.空白","img":"emoji:⬜"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"boardrooms","l3zh":"n.董事会议室（复数）","img":"emoji:🏢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"bravery","l3zh":"n.勇敢；勇气","img":"emoji:🦁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"brie","l3zh":"n.布里奶酪（专名）","img":"emoji:🧀"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"broken","l3zh":"adj.破碎的；坏了的","img":"emoji:💔"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"bust","l3zh":"v.打破；使失败 n.半身像","img":"emoji:💥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"cancer","l3zh":"n.癌症；恶性肿瘤","img":"emoji:⚠️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"careers","l3zh":"n.职业；事业（复数）","img":"emoji:💼"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"carol","l3zh":"n.卡罗尔（人名，专名）","img":"emoji:🎵"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"caused","l3zh":"v.引起；导致（cause 的过去式）","img":"emoji:⚡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"cautious","l3zh":"adj.谨慎的；小心的","img":"emoji:🐢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"challenge","l3zh":"n.挑战 v.向……挑战","img":"emoji:🥊"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"chance","l3zh":"n.机会；可能性","img":"emoji:🎲"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"cheering","l3zh":"n.欢呼；喝彩","img":"emoji:📣"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"clinton","l3zh":"n.克林顿（人名，专名）","img":"emoji:🗽"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"cnbc","l3zh":"n.CNBC（美国财经电视频道，专名）","img":"emoji:📺"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"code","l3zh":"n.代码；密码；法典","img":"emoji:⌨️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"coders","l3zh":"n.程序员；编码者（复数）","img":"emoji:⌨️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"coding","l3zh":"n.编程；编码","img":"emoji:⌨️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"colleague","l3zh":"n.同事；同僚","img":"emoji:🤝"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"columbia","l3zh":"n.哥伦比亚（大学/地名，专名）","img":"emoji:🎓"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"combine","l3zh":"v.结合；联合","img":"emoji:🧩"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"comfortable","l3zh":"adj.舒适的；自在的","img":"emoji:🛋️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"command","l3zh":"n.命令；指挥 v.命令；指挥","img":"emoji:📢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"company","l3zh":"n.公司；同伴","img":"emoji:🏢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"computer","l3zh":"n.计算机；电脑","img":"https://s.alicdn.com/@sc04/kf/Haff946684b954bfd8ba6a06e4e0a53bfr.png_640x640.jpg"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"computing","l3zh":"n.计算；计算机技术","img":"emoji:💻"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"confidence","l3zh":"n.信心；自信","img":"emoji:💪"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"congress","l3zh":"n.国会；代表大会","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"congressional","l3zh":"adj.国会的；议会的","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"congresswoman","l3zh":"n.女国会议员","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"courageous","l3zh":"adj.勇敢的；无畏的","img":"emoji:🦁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"crawl","l3zh":"v.爬行；缓慢行进","img":"emoji:🐢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"crazy","l3zh":"adj.疯狂的；着迷的","img":"emoji:🤪"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"daily","l3zh":"adj.每日的 adv.每天","img":"emoji:📅"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"dared","l3zh":"v.敢；敢于（dare 的过去式）","img":"emoji:🔥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"defer","l3zh":"v.推迟；延期","img":"emoji:⏸️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"deficit","l3zh":"n.赤字；亏损；差额","img":"emoji:📉"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"deleted","l3zh":"v.删除（delete 的过去式）","img":"emoji:🗑️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"democratic","l3zh":"adj.民主的；民主党的","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"detect","l3zh":"v.察觉；发现；检测","img":"emoji:🔍"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"difference","l3zh":"n.差别；差异","img":"emoji:↔️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"disrupt","l3zh":"v.扰乱；破坏；颠覆","img":"emoji:💥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"district","l3zh":"n.地区；区域；行政区","img":"emoji:🗺️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"during","l3zh":"prep.在……期间","img":"emoji:⏳"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"dweck","l3zh":"n.德韦克（心理学家姓氏，专名）","img":"emoji:🧠"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"economy","l3zh":"n.经济；节约","img":"emoji:💰"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"editor","l3zh":"n.编辑；主编","img":"emoji:✏️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"efforts","l3zh":"n.努力（复数）","img":"emoji:💪"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"election","l3zh":"n.选举","img":"emoji:🗳️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"employee","l3zh":"n.雇员；员工","img":"emoji:🧑‍💼"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"endless","l3zh":"adj.无止境的；无尽的","img":"emoji:♾️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"endorsement","l3zh":"n.支持；背书；代言","img":"emoji:👍"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"energizing","l3zh":"adj.充满活力的；激励的","img":"emoji:⚡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"entire","l3zh":"adj.全部的；整个的","img":"emoji:📦"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"error","l3zh":"n.错误；差错","img":"emoji:⚠️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"even","l3zh":"adv.甚至；更加","img":"emoji:🔁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"everywhere","l3zh":"adv.到处；处处","img":"emoji:🌍"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"evidence","l3zh":"n.证据；迹象","img":"emoji:🔎"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"exactly","l3zh":"adv.确切地；恰好","img":"emoji:🎯"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"examples","l3zh":"n.例子；范例（复数）","img":"emoji:📋"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"existed","l3zh":"v.存在（exist 的过去式）","img":"emoji:✔️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"failed","l3zh":"v.失败（fail 的过去式）","img":"emoji:❌"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"failure","l3zh":"n.失败；故障","img":"emoji:❌"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"fear","l3zh":"n.恐惧；害怕 v.害怕","img":"emoji:😨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"federal","l3zh":"adj.联邦的；联邦制的","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"few","l3zh":"adj.很少的；少数的","img":"emoji:🔢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"fewer","l3zh":"adj.较少的（few 的比较级）","img":"emoji:🔢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"fix","l3zh":"v.修理；固定；解决","img":"emoji:🔧"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"fundraiser","l3zh":"n.筹款人；筹款活动","img":"emoji:💰"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"gaming","l3zh":"n.游戏；赌博","img":"emoji:🎮"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"gonna","l3zh":"v.将要（going to 的口语缩写）","img":"emoji:⏭️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"gravitate","l3zh":"v.被吸引；倾向于","img":"emoji:🧲"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"guys","l3zh":"n.伙计们；家伙们（复数）","img":"emoji:👥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"habituated","l3zh":"adj.习惯了的","img":"emoji:🔁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"handled","l3zh":"v.处理；应付（handle 的过去式）","img":"emoji:👐"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"hillary","l3zh":"n.希拉里（人名，专名）","img":"emoji:🗽"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"however","l3zh":"adv.然而；不过","img":"emoji:🤔"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"hp","l3zh":"n.惠普（公司名，专名）","img":"emoji:🖨️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"humiliating","l3zh":"adj.丢脸的；羞辱性的","img":"emoji:😳"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"immediately","l3zh":"adv.立即；马上","img":"emoji:⚡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"impact","l3zh":"n.影响；冲击 v.影响","img":"emoji:💥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"imperfect","l3zh":"adj.不完美的；有缺点的","img":"emoji:🩹"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"imperfection","l3zh":"n.不完美；缺陷","img":"emoji:🩹"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"importance","l3zh":"n.重要性","img":"emoji:⭐"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"including","l3zh":"prep.包括；包含","img":"emoji:📦"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"incredible","l3zh":"adj.难以置信的；极好的","img":"emoji:🤩"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"indian","l3zh":"adj.印度的；印第安人的 n.印度人；印第安人","img":"emoji:🇮🇳"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"innovate","l3zh":"v.创新；革新","img":"emoji:💡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"innovation","l3zh":"n.创新；革新","img":"emoji:💡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"instance","l3zh":"n.实例；例子","img":"emoji:📋"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"instead","l3zh":"adv.代替；反而","img":"emoji:🔀"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"intro","l3zh":"n.介绍；开场白","img":"emoji:🎬"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"invoked","l3zh":"v.援引；调用（invoke 的过去式）","img":"emoji:📢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"iq","l3zh":"n.智商（IQ）","img":"emoji:🧠"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"java","l3zh":"n.Java（编程语言，专名）","img":"emoji:☕"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"journal","l3zh":"n.期刊；日记；日志","img":"https://s.alicdn.com/@sc04/kf/Ha22dc945b0fc4a9c85f92c66b3675ecf2.jpg_640x640.jpg"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"lean","l3zh":"v.倾斜；倚靠 adj.精益的","img":"emoji:↙️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"leaning","l3zh":"n.倾向；偏好","img":"emoji:↙️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"lev","l3zh":"n.莱夫（人名，专名）","img":"emoji:🧑"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"level","l3zh":"n.水平；等级；层次","img":"emoji:📊"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"leverage","l3zh":"n.杠杆作用；影响力 v.利用","img":"emoji:🪜"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"likely","l3zh":"adj.可能的 adv.很可能","img":"emoji:🎲"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"magical","l3zh":"adj.神奇的；有魔力的","img":"emoji:✨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"malignant","l3zh":"adj.恶性的；恶意的","img":"emoji:☠️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"material","l3zh":"n.材料；物质；素材","img":"emoji:🧱"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"menstruation","l3zh":"n.月经；行经","img":"emoji:🚺"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"million","l3zh":"n.百万","img":"emoji:🔢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"moment","l3zh":"n.时刻；片刻","img":"emoji:⏱️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"movement","l3zh":"n.运动；活动；移动","img":"emoji:🏃"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"negotiating","l3zh":"v.谈判；协商（negotiate 的现在分词）","img":"emoji:🤝"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"network","l3zh":"n.网络；人际关系网","img":"emoji:🌐"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"niece","l3zh":"n.侄女；外甥女","img":"emoji:👧"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"nor","l3zh":"conj.也不；也没有","img":"emoji:🚫"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"organizer","l3zh":"n.组织者；主办者","img":"emoji:🧭"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"outperform","l3zh":"v.胜过；做得比……好","img":"emoji:🥇"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"overly","l3zh":"adv.过度地；极度","img":"emoji:😵‍💫"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"perfect","l3zh":"adj.完美的；理想的","img":"emoji:✨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"perfection","l3zh":"n.完美；完善","img":"emoji:✨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"perseverance","l3zh":"n.毅力；坚持不懈","img":"emoji:💪"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"political","l3zh":"adj.政治的","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"politics","l3zh":"n.政治；政治活动","img":"emoji:🏛️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"polls","l3zh":"n.民意调查；投票（复数）","img":"emoji:🗳️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"pollster","l3zh":"n.民意调查专家","img":"emoji:📊"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"population","l3zh":"n.人口；全体居民","img":"emoji:👥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"positions","l3zh":"n.职位；位置；立场（复数）","img":"emoji:📍"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"potential","l3zh":"adj.潜在的 n.潜力；可能性","img":"emoji:💡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"presses","l3zh":"n.新闻界；印刷机 v.按压","img":"emoji:📰"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"primary","l3zh":"adj.主要的；初级的；初选的","img":"emoji:1️⃣"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"process","l3zh":"n.过程；流程 v.处理","img":"emoji:🔄"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"professor","l3zh":"n.教授","img":"emoji:🎓"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"program","l3zh":"n.程序；节目；计划","img":"emoji:💻"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"progress","l3zh":"n.进步；进展","img":"emoji:📈"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"psychologist","l3zh":"n.心理学家","img":"emoji:🧠"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"qualifications","l3zh":"n.资格；资历（复数）","img":"emoji:📜"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"quo","l3zh":"n.（status quo）现状；原状","img":"emoji:📌"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"rather","l3zh":"adv.相当；宁愿","img":"emoji:⚖️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"reason","l3zh":"n.原因；理由 v.推理","img":"emoji:💡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"redouble","l3zh":"v.加倍；加强","img":"emoji:⏫"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"refugee","l3zh":"n.难民","img":"emoji:🧳"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"requires","l3zh":"v.需要；要求（require 的第三人称单数）","img":"emoji:📋"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"rewarded","l3zh":"v.奖励；奖赏（reward 的过去式）","img":"emoji:🎁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"rising","l3zh":"adj.上升的；兴起的","img":"emoji:📈"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"risk","l3zh":"n.风险；危险 v.冒险","img":"emoji:⚠️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"risks","l3zh":"n.风险（复数）","img":"emoji:⚠️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"rough","l3zh":"adj.粗糙的；艰难的；粗略的","img":"emoji:🪨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"routinely","l3zh":"adv.例行地；常规地","img":"emoji:🔁"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"safely","l3zh":"adv.安全地","img":"emoji:🛡️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"scenes","l3zh":"n.场景；场面（复数）","img":"emoji:🎬"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"screen","l3zh":"n.屏幕；银幕","img":"emoji:📱"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"semicolon","l3zh":"n.分号（;）","img":"emoji:🔣"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"seriously","l3zh":"adv.认真地；严肃地","img":"emoji:🧐"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"sexism","l3zh":"n.性别歧视","img":"emoji:💢"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"silicon","l3zh":"n.硅","img":"emoji:🧪"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"since","l3zh":"prep.自从 conj.因为；既然","img":"emoji:📅"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"sisterhood","l3zh":"n.姐妹情谊；妇女团体","img":"emoji:👭"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"snapped","l3zh":"v.猛咬；折断；拍照（snap 的过去式）","img":"emoji:📸"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"socialization","l3zh":"n.社会化；社交","img":"emoji:👥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"socialize","l3zh":"v.社交；交际","img":"emoji:👥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"socialized","l3zh":"v.使社会化；交际（socialize 的过去式）","img":"emoji:👥"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"society","l3zh":"n.社会；社团","img":"emoji:🏙️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"solve","l3zh":"v.解决；解答","img":"emoji:✅"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"spent","l3zh":"v.花费；度过（spend 的过去式）","img":"emoji:💸"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"staring","l3zh":"v.凝视；盯着看（stare 的现在分词）","img":"emoji:👀"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"startups","l3zh":"n.初创企业（复数）","img":"emoji:🚀"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"status","l3zh":"n.地位；状态","img":"emoji:📊"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"stem","l3zh":"n.茎；主干（STEM：科学、技术、工程、数学）","img":"emoji:🌱"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"struggling","l3zh":"v.挣扎；奋斗（struggle 的现在分词）","img":"emoji:😮‍💨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"stupid","l3zh":"adj.愚蠢的；笨的","img":"emoji:🤡"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"success","l3zh":"n.成功","img":"emoji:🏆"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"suites","l3zh":"n.套房；套件（复数）","img":"emoji:🏨"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"supportive","l3zh":"adj.支持的；给予帮助的","img":"emoji:🤝"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"swing","l3zh":"n.摇摆；秋千 v.摆动","img":"emoji:↔️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"swore","l3zh":"v.发誓；咒骂（swear 的过去式）","img":"emoji:🤬"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"syrian","l3zh":"adj.叙利亚的 n.叙利亚人","img":"emoji:🇸🇾"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"system","l3zh":"n.系统；体系；制度","img":"emoji:⚙️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"taboo","l3zh":"n.禁忌 adj.禁忌的","img":"emoji:🚫"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"tampon","l3zh":"n.卫生棉条","img":"emoji:🩸"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"technology","l3zh":"n.技术；科技","img":"emoji:🔬"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"text","l3zh":"n.文本；短信 v.发短信","img":"emoji:💬"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"themselves","l3zh":"pron.他们自己；她们自己；它们自己","img":"emoji:🪞"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"thousands","l3zh":"num.数千；成千上万","img":"emoji:🌌"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"towards","l3zh":"prep.朝；向；对于","img":"emoji:➡️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"trial","l3zh":"n.审判；试验；试用","img":"emoji:⚖️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"truly","l3zh":"adv.真正地；确实地","img":"emoji:💯"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"underrepresented","l3zh":"adj.代表人数不足的；未被充分代表的","img":"emoji:📉"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"undo","l3zh":"v.撤销；解开；消除","img":"emoji:↩️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"university","l3zh":"n.大学","img":"emoji:🎓"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"unless","l3zh":"conj.除非；如果不","img":"emoji:🚫"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"until","l3zh":"prep.直到……为止","img":"emoji:⏳"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"upstart","l3zh":"n.新贵；暴发户 adj.暴发的","img":"emoji:🚀"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"valley","l3zh":"n.山谷；流域","img":"emoji:🏞️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"vote","l3zh":"n.投票；选票 v.投票","img":"emoji:🗳️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"votes","l3zh":"n.选票；投票（复数）","img":"emoji:🗳️"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"wasted","l3zh":"adj.浪费的 v.浪费（waste 的过去式）","img":"emoji:💸"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"whether","l3zh":"conj.是否；无论","img":"emoji:🔀"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"wonder","l3zh":"v.想知道；惊讶 n.奇迹；惊奇","img":"emoji:🤔"},{"l1en":"小学后词汇","l1zh":"小学后词汇","l2en":"通用","l2zh":"通用","l3en":"york","l3zh":"n.约克（地名，专名）","img":"emoji:🏰"}];
+</script>
+<script>
+(function(){
+"use strict";
+var ALL = window.CATALOG || [];
+var state = {
+  mode: "en2zh",      // en2zh | zh2en
+  order: "seq",       // seq | rand
+  cat: "all",         // 当前筛选的一级类目（zh 名）
+  idx: 0,
+  deck: [],           // 当前筛选后的记录索引（在 ALL 中的下标）
+  flipped: false,
+  autoOn: false,
+  autoTimer: null,
+  speaking: false
+};
+
+/* ---------- DOM ---------- */
+var $ = function(id){ return document.getElementById(id); };
+var elCard=$("card"), elScene=$("scene"), elFrontText=$("frontText"), elBackText=$("backText");
+var elFrontPath=$("frontPath"), elBackPath=$("backPath"), elTagsFront=$("tagsFront"), elTagsBack=$("tagsBack");
+var elCornerFront=$("cornerFront"), elFrontHint=$("frontHint"), elFrontPathLabel=$("frontPathLabel");
+var elFrontImgWrap=$("frontImgWrap"), elFrontImg=$("frontImg"), elFrontEmoji=$("frontEmoji"), elWatermark=$("watermark");
+var elPfill=$("pfill"), elPcur=$("pcur"), elPinfo=$("pinfo");
+var elChips=$("chips"), elModeBtn=$("modeBtn"), elOrderBtn=$("orderBtn"), elAutoBtn=$("autoBtn");
+var elSpeak=$("speakBtn"), elPrev=$("prevBtn"), elNext=$("nextBtn"), elLang=$("langBtn");
+var elToast=$("toast");
+
+/* ---------- 语音 ---------- */
+var voices=[];
+var SPEAK_GAP = 1000;   // 单词间隔 1 秒
+var speakGen = 0;       // 朗读代次，用于中断旧朗读链
+function loadVoices(){
+  voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+}
+if ("speechSynthesis" in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function pickVoice(lang){
+  var exact = lang.toLowerCase();
+  var preferred = {
+    "en-gb": ["daniel", "kate", "arthur", "serena", "oliver", "moira", "libby", "sonia", "thomas", "google uk english"],
+    "en-us": ["google us english", "samantha", "alex", "ava", "allison"],
+    "zh-cn": ["ting-ting", "xiaoxiao", "huihui", "meijia", "yaoyao", "google 普通话"]
+  };
+  var list = preferred[exact] || [];
+  for (var i=0;i<list.length;i++){
+    for (var j=0;j<voices.length;j++){
+      if (voices[j].name && voices[j].name.toLowerCase().indexOf(list[i])!==-1) return voices[j];
+    }
+  }
+  for (var j=0;j<voices.length;j++){
+    if (voices[j].lang && voices[j].lang.toLowerCase().indexOf(exact)===0) return voices[j];
+  }
+  var p = lang.split("-")[0];
+  for (var j=0;j<voices.length;j++){
+    if (voices[j].lang && voices[j].lang.toLowerCase().indexOf(p)===0) return voices[j];
+  }
+  return null;
+}
+function stopSpeaking(){
+  speakGen++;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if (audioBusy){
+    audioBusy = false;
+    audioEl.pause();
+    audioEl.onended = audioEl.onerror = audioEl.oncanplay = null;
+    audioEl.removeAttribute("src");
+  }
+  elSpeak.classList.remove("speaking");
+}
+/* 整句朗读（中文等） */
+function speakText(text, lang, onDone){
+  if (!("speechSynthesis" in window)){ toast("此浏览器不支持朗读，请点右上角···在浏览器中打开"); if (onDone) onDone(); return; }
+  var gen = ++speakGen;
+  speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = lang;
+  u.rate = 0.92;
+  u.pitch = 1;
+  var v = pickVoice(lang);
+  if (v) u.voice = v;
+  u.onstart = function(){ elSpeak.classList.add("speaking"); };
+  u.onend = u.onerror = function(){
+    if (gen !== speakGen) return;
+    elSpeak.classList.remove("speaking");
+    if (onDone) onDone();
+  };
+  setTimeout(function(){
+    if (gen !== speakGen) return;
+    if ("speechSynthesis" in window) speechSynthesis.resume();
+    speechSynthesis.speak(u);
+  }, 120);
+}
+/* 逐词朗读：跳过 &，词间间隔 SPEAK_GAP 毫秒 */
+/* 朗读分组：按 & 拆分，组内连读（词组），组间间隔 SPEAK_GAP */
+function speakByGroups(groups, lang, onDone){
+  if (!groups.length){ if (onDone) onDone(); return; }
+  if (!("speechSynthesis" in window)){ toast("此浏览器不支持朗读，请点右上角···在浏览器中打开"); if (onDone) onDone(); return; }
+  var gen = ++speakGen;
+  speechSynthesis.cancel();
+  var i = 0;
+  function begin(){
+    if (gen !== speakGen) return;
+    elSpeak.classList.add("speaking");
+    if ("speechSynthesis" in window) speechSynthesis.resume();
+    next();
+  }
+  function next(){
+    if (gen !== speakGen) return;
+    if (i >= groups.length){
+      elSpeak.classList.remove("speaking");
+      if (onDone) onDone();
+      return;
+    }
+    var g = groups[i++];
+    var u = new SpeechSynthesisUtterance(g);
+    u.lang = lang;
+    u.rate = 0.9;
+    u.pitch = 1;
+    var v = pickVoice(lang);
+    if (v){
+      u.voice = v;
+      if (lang.indexOf("en")===0 && !window.__voiceNotified){
+        window.__voiceNotified = true;
+        toast("英式发音："+v.name);
+      }
+    }
+    u.onend = u.onerror = function(){
+      if (gen !== speakGen) return;
+      if (i < groups.length){
+        setTimeout(next, SPEAK_GAP);
+      } else {
+        next();
+      }
+    };
+    speechSynthesis.speak(u);
+  }
+  setTimeout(begin, 120);
+}
+function splitGroups(en){
+  return String(en).split("&").map(function(g){
+    return g.replace(/\s+/g, " ").trim();
+  }).filter(function(g){ return g.length > 0; });
+}
+var audioEl = new Audio();
+var audioBusy = false;
+function pad5(n){ return ("00000"+n).slice(-5); }
+function playAudio(url, onOk, onFail){
+  audioBusy = true;
+  elSpeak.classList.add("speaking");
+  var finished = false;
+  function done(ok){
+    if (finished) return;
+    finished = true;
+    audioBusy = false;
+    elSpeak.classList.remove("speaking");
+    audioEl.onended = audioEl.onerror = audioEl.oncanplay = null;
+    audioEl.removeAttribute("src");
+    if (ok && onOk) onOk();
+    else if (!ok && onFail) onFail();
+  }
+  audioEl.onended = function(){ done(true); };
+  audioEl.onerror = function(){ done(false); };
+  audioEl.oncanplay = function(){
+    audioEl.play().catch(function(){ done(false); });
+  };
+  audioEl.src = url;
+  setTimeout(function(){
+    if (!finished && audioEl.readyState < 3){ done(false); }
+  }, 4000);
+}
+function speakCurrent(onDone){
+  var r = ALL[state.deck[state.idx]];
+  if (!r) return;
+  var idx = state.deck[state.idx];
+  var isEn;
+  if (state.flipped){
+    isEn = state.mode !== "en2zh";
+  } else {
+    isEn = state.mode === "en2zh";
+  }
+  if (!isEn){
+    if (state.flipped){ speakText(r.l1zh+"，"+r.l2zh+"，"+r.l3zh, "zh-CN", onDone); }
+    else { speakText(r.l3zh, "zh-CN", onDone); }
+    return;
+  }
+  /* 英文：优先播放预生成音频（微信内也可发声），失败回退 TTS */
+  stopSpeaking();
+  var url = "audio/" + pad5(idx) + ".m4a";
+  playAudio(url, function(){ if (onDone) onDone(); }, function(){
+    if (state.flipped){ speakByGroups(splitGroups(r.l1en+" "+r.l2en+" "+r.l3en), "en-GB", onDone); }
+    else { speakByGroups(splitGroups(r.l3en), "en-GB", onDone); }
+  });
+}
+
+/* ---------- 筛选 chips ---------- */
+function buildChips(){
+  var cats = [];
+  var seen = {};
+  for (var i=0;i<ALL.length;i++){
+    var k = ALL[i].l2zh;
+    if (!seen[k]){ seen[k]=true; cats.push({zh:k, en:ALL[i].l2en, n:1}); }
+    else { for (var j=0;j<cats.length;j++) if (cats[j].zh===k) cats[j].n++; }
+  }
+  var html = '<div class="chip on" data-cat="all">全部 <b>'+ALL.length+'</b></div>';
+  for (var c=0;c<cats.length;c++){
+    html += '<div class="chip" data-cat="'+cats[c].zh+'">'+cats[c].zh+' <b>'+cats[c].n+'</b></div>';
+  }
+  elChips.innerHTML = html;
+  elChips.addEventListener("click", function(e){
+    var chip = e.target.closest(".chip");
+    if (!chip) return;
+    var cat = chip.getAttribute("data-cat");
+    if (cat === state.cat) return;
+    state.cat = cat;
+    var all = elChips.querySelectorAll(".chip");
+    for (var i=0;i<all.length;i++) all[i].classList.remove("on");
+    chip.classList.add("on");
+    buildDeck();
+  });
+}
+
+/* ---------- deck ---------- */
+function buildDeck(){
+  stopSpeaking();
+  state.deck = [];
+  for (var i=0;i<ALL.length;i++){
+    if (state.cat==="all" || ALL[i].l2zh===state.cat) state.deck.push(i);
+  }
+  if (state.order==="rand") shuffle(state.deck);
+  state.idx = 0;
+  state.flipped = false;
+  elCard.classList.remove("flip");
+  render();
+}
+function shuffle(a){
+  for (var i=a.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+}
+function nextIdx(){
+  if (state.order==="rand") return Math.floor(Math.random()*state.deck.length);
+  return (state.idx+1)%state.deck.length;
+}
+
+/* ---------- render ---------- */
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function render(){
+  if (!state.deck.length){ toast("当前分类无数据"); return; }
+  var r = ALL[state.deck[state.idx]];
+  var en2zh = state.mode==="en2zh";
+
+  elFrontText.textContent = en2zh ? r.l3en : r.l3zh;
+  elBackText.textContent  = en2zh ? r.l3zh : r.l3en;
+  elFrontPath.innerHTML = en2zh
+    ? esc(r.l1en)+'<span class="arrow">›</span>'+esc(r.l2en)
+    : esc(r.l1zh)+'<span class="arrow">›</span>'+esc(r.l2zh);
+  elBackPath.innerHTML = en2zh
+    ? esc(r.l1zh)+'<span class="arrow">›</span>'+esc(r.l2zh)+'<span class="arrow">›</span>'+esc(r.l3zh)
+    : esc(r.l1en)+'<span class="arrow">›</span>'+esc(r.l2en)+'<span class="arrow">›</span>'+esc(r.l3en);
+
+  elTagsFront.innerHTML = en2zh
+    ? '<span class="tag">'+esc(r.l1en)+'</span><span class="tag">'+esc(r.l2en)+'</span>'
+    : '<span class="tag">'+esc(r.l1zh)+'</span><span class="tag">'+esc(r.l2zh)+'</span>';
+  elTagsBack.innerHTML  = '<span class="tag acc">'+esc(r.l3en)+'</span>';
+  elCornerFront.textContent = en2zh ? "英 → 中" : "中 → 英";
+  updateLangBtn();
+  if (r.img){
+    elFrontImgWrap.classList.remove("hide");
+    if (r.img.indexOf("emoji:") === 0){
+      elFrontImg.classList.add("hide");
+      elFrontImg.removeAttribute("src");
+      elFrontEmoji.classList.remove("hide");
+      elFrontEmoji.textContent = r.img.slice(6);
+    } else {
+      elFrontImg.classList.remove("hide");
+      elFrontEmoji.classList.add("hide");
+      elFrontEmoji.textContent = "";
+      elFrontImg.src = r.img;
+    }
+  } else {
+    elFrontImgWrap.classList.add("hide");
+    elFrontImg.removeAttribute("src");
+    elFrontEmoji.classList.add("hide");
+  }
+  if (r.img){
+    elWatermark.classList.remove("hide");
+  } else {
+    elWatermark.classList.add("hide");
+  }
+  elFrontHint.textContent = en2zh ? "Tap to flip · 🔊 word by word" : "点击卡片查看英文 · 点 🔊 逐词跟读";
+  elFrontPathLabel.textContent = en2zh ? "PATH" : "所属路径";
+
+  var n = state.deck.length;
+  var pct = n ? Math.round((state.idx+1)/n*100) : 0;
+  elPfill.style.width = pct+"%";
+  elPcur.textContent = (state.idx+1)+" / "+n;
+  elPinfo.textContent = state.cat==="all" ? "全部" : state.cat;
+}
+function flipCard(){
+  state.flipped = !state.flipped;
+  elCard.classList.toggle("flip", state.flipped);
+  if (state.autoOn){ scheduleAuto(); }
+}
+
+/* ---------- 自动播放（朗读驱动） ---------- */
+function stopAuto(){
+  state.autoOn = false;
+  elAutoBtn.textContent = "▶";
+  elAutoBtn.classList.remove("on");
+  if (state.autoTimer){ clearTimeout(state.autoTimer); state.autoTimer=null; }
+  stopSpeaking();
+}
+function scheduleAuto(){
+  if (!state.autoOn) return;
+  if (state.autoTimer) clearTimeout(state.autoTimer);
+  if (state.flipped){
+    // 背面阶段：朗读答案，2.6s 后下一张
+    speakCurrent(function(){});
+    state.autoTimer = setTimeout(function(){
+      elCard.classList.remove("flip");
+      state.flipped = false;
+      state.idx = nextIdx();
+      render();
+      scheduleAuto();
+    }, 2600);
+  } else {
+    // 正面阶段：逐词朗读英文（3s 间隔），完成后 1.2s 翻面
+    speakCurrent(function(){
+      if (!state.autoOn) return;
+      state.autoTimer = setTimeout(function(){
+        elCard.classList.add("flip");
+        state.flipped = true;
+        scheduleAuto();
+      }, 1200);
+    });
+  }
+}
+function toggleAuto(){
+  state.autoOn = !state.autoOn;
+  if (state.autoOn){
+    elAutoBtn.textContent = "⏸";
+    elAutoBtn.classList.add("on");
+    if (state.flipped){ elCard.classList.remove("flip"); state.flipped=false; }
+    scheduleAuto();
+    toast("自动播放中：自动翻面并朗读");
+  } else {
+    stopAuto();
+  }
+}
+
+/* ---------- 事件 ---------- */
+elCard.addEventListener("click", function(e){
+  if (e.target === elSpeak || elSpeak.contains(e.target)) return;
+  stopSpeaking();
+  flipCard();
+});
+elSpeak.addEventListener("click", function(e){
+  e.stopPropagation();
+  if (state.autoOn) return;
+  speakCurrent();
+});
+elNext.addEventListener("click", function(){
+  stopSpeaking();
+  state.idx = nextIdx();
+  state.flipped = false;
+  elCard.classList.remove("flip");
+  render();
+  if (state.autoOn) scheduleAuto();
+});
+elPrev.addEventListener("click", function(){
+  stopSpeaking();
+  state.idx = (state.idx-1+state.deck.length)%state.deck.length;
+  state.flipped = false;
+  elCard.classList.remove("flip");
+  render();
+  if (state.autoOn) scheduleAuto();
+});
+elLang.addEventListener("click", function(){
+  stopSpeaking();
+  state.mode = state.mode === "en2zh" ? "zh2en" : "en2zh";
+  elModeBtn.textContent = state.mode === "en2zh" ? "EN → 中" : "中 → EN";
+  if (state.flipped){ elCard.classList.remove("flip"); state.flipped = false; }
+  render();
+});
+function updateLangBtn(){
+  elLang.title = state.mode === "en2zh" ? "切换为中文+图片（当前英文）" : "切换为英文+图片（当前中文）";
+}
+elModeBtn.addEventListener("click", function(){
+  stopSpeaking();
+  state.mode = state.mode==="en2zh" ? "zh2en" : "en2zh";
+  elModeBtn.textContent = state.mode==="en2zh" ? "EN → 中" : "中 → EN";
+  if (state.flipped){ elCard.classList.remove("flip"); state.flipped=false; }
+  render();
+});
+elFrontImg.addEventListener("error", function(){ elFrontImgWrap.classList.add("hide"); });
+elFrontImg.addEventListener("load", function(){ elFrontImgWrap.classList.remove("hide"); });
+elOrderBtn.addEventListener("click", function(){
+  stopSpeaking();
+  state.order = state.order==="seq" ? "rand" : "seq";
+  elOrderBtn.textContent = state.order==="seq" ? "顺序" : "随机";
+  buildDeck();
+});
+elAutoBtn.addEventListener("click", toggleAuto);
+
+var elTtsBanner=$("ttsBanner"), elTtsClose=$("ttsClose");
+function checkTTS(){
+  if (!("speechSynthesis" in window)){
+    elTtsBanner.classList.remove("hide");
+  }
+}
+elTtsClose.addEventListener("click", function(){ elTtsBanner.classList.add("hide"); });
+
+document.addEventListener("visibilitychange", function(){
+  if (document.hidden) stopSpeaking();
+});
+
+/* 键盘支持（桌面） */
+document.addEventListener("keydown", function(e){
+  if (e.key==="ArrowRight" || e.key===" ") elNext.click();
+  else if (e.key==="ArrowLeft") elPrev.click();
+  else if (e.key==="Enter") flipCard();
+});
+
+/* ---------- toast ---------- */
+var toastTimer=null;
+function toast(msg){
+  elToast.textContent = msg;
+  elToast.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ elToast.classList.remove("show"); }, 2200);
+}
+
+/* ---------- 启动 ---------- */
+buildChips();
+buildDeck();
+checkTTS();
+})();
+</script>
+</body>
+</html>
